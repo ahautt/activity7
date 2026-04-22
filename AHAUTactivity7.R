@@ -165,3 +165,55 @@ ggplot() +
   theme_classic()+
   labs(x="year", y="Evapotranspiration (in)")
 
+#HOMEWORK 7
+#Question 1 
+
+#tranform co2 using suggested transformation
+ghg$co2.tranform <- 1/(ghg$co2 + 1000)
+
+#design a multiple regression
+mod.co2 <- lm(co2.tranform ~ 
+                 log.age+
+                 mean.depth+
+                 log.DIP+
+                 log.precip+ BorealV, data=ghg) #uses the data argument to specify dataframe
+summary(mod.co2)
+
+res.co2 <- rstandard(mod.co2)
+fit.co2 <- fitted.values(mod.co2)
+
+# qq plot
+qqnorm(res.co2, pch=19, col="grey50")
+qqline(res.co2)
+
+# shapiro-wilks test
+shapiro.test(res.co2)
+
+
+plot(fit.co2,res.co2, pch=19, col="grey50")
+abline(h=0)
+
+# isolate continuous model variables into data frame:
+
+reg.data <- data.frame(ghg$log.age,
+                       ghg$mean.depth,
+                       ghg$log.DIP,
+                       ghg$log.precip)
+
+# make a correlation matrix 
+chart.Correlation(reg.data, histogram=TRUE, pch=19)
+
+summary(mod.co2)$coefficients
+
+# run stepwise
+full.step <- ols_step_forward_aic(mod.co2)
+# view table
+full.step 
+# check full model
+full.step$model
+# plot AIC over time
+plot(full.step )
+
+summary(mod.co2)$coefficients
+
+
