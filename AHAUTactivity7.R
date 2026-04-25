@@ -216,4 +216,5 @@ plot(full.step )
 
 summary(mod.co2)$coefficients
 
+#QUESTION 3
 
