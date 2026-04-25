@@ -218,3 +218,171 @@ summary(mod.co2)$coefficients
 
 #QUESTION 3
 
+ETdat <- read.csv("/cloud/project/activity7/ETdata.csv")
+unique(ETdat$crop)
+
+# average fields for each month for almonds
+almond <- ETdat %>% 
+  filter(crop == "Almonds") %>% 
+  group_by(date) %>% 
+  summarise(ET.in = mean(Ensemble.ET, na.rm=TRUE)) 
+
+
+# almond ET time series
+almond_ts <- ts(almond$ET.in,
+                start = c(2016,1), 
+                frequency= 12) 
+
+# decompose almond ET time series
+almond_dec <- decompose(almond_ts)
+# plot decomposition
+plot(almond_dec)
+
+# average fields for each month for pistachios
+pistachio <- ETdat %>% 
+  filter(crop == "Pistachios") %>% 
+  group_by(date) %>% 
+  summarise(ET.in = mean(Ensemble.ET, na.rm=TRUE))
+
+
+# pistachio ET time series
+pistachio_ts <- ts(pistachio$ET.in, 
+                start = c(2016,1), 
+                frequency= 12) 
+
+# decompose pistachio ET time series
+pistachio_dec <- decompose(pistachio_ts)
+# plot decomposition
+plot(pistachio_dec)
+
+
+# average fields for each month for fallow/idle
+fallow_idle <- ETdat %>% 
+  filter(crop == "Fallow/Idle Cropland") %>% 
+  group_by(date) %>% 
+  summarise(ET.in = mean(Ensemble.ET, na.rm=TRUE)) 
+
+
+# fallow/idle ET time series
+fallow_idle_ts <- ts(fallow_idle$ET.in, 
+                   start = c(2016,1), 
+                   frequency= 12) 
+
+# decompose fallow/idle ET time series
+fallow_idle_dec <- decompose(fallow_idle_ts)
+# plot decomposition
+plot(fallow_idle_dec)
+
+# average fields for each month for corn
+corn <- ETdat %>% 
+  filter(crop == "Corn") %>% 
+  group_by(date) %>% 
+  summarise(ET.in = mean(Ensemble.ET, na.rm=TRUE)) 
+
+
+# corn ET time series
+corn_ts <- ts(corn$ET.in, 
+                     start = c(2016,1),
+                     frequency= 12) 
+
+# decompose corn ET time series
+corn_dec <- decompose(corn_ts)
+# plot decomposition
+plot(corn_dec)
+
+# average fields for each month for grapes
+grape <- ETdat %>% 
+  filter(crop == "Grapes (Table/Raisin)") %>% 
+  group_by(date) %>% 
+  summarise(ET.in = mean(Ensemble.ET, na.rm=TRUE))
+
+
+# grapes ET time series
+grape_ts <- ts(grape$ET.in, 
+              start = c(2016,1), 
+              frequency= 12) 
+
+# decompose grape ET time series
+grape_dec <- decompose(grape_ts)
+# plot decomposition
+plot(grape_dec)
+
+#QUESTION 4
+pistachio_y <- na.omit(pistachio_ts)
+model1_pistachio <- arima(pistachio_y , # data 
+                order = c(1,0,0)) # first number is AR order all other numbers get a 0 to keep AR format
+model4_pistachio <- arima(pistachio_y , # data 
+                order = c(4,0,0)) # first number is AR order all other numbers get a 0 to keep AR format
+model4_pistachio
+# calculate fit
+AR_fit1_pistachio <- pistachio_y - residuals(model1_pistachio) 
+AR_fit4_pistachio <- pistachio_y - residuals(model4_pistachio)
+#plot data
+plot(pistachio_y)
+# plot fit
+points(AR_fit1_pistachio, type = "l", col = "tomato3", lty = 2, lwd=2)
+points(AR_fit4_pistachio, type = "l", col = "darkgoldenrod4", lty = 2, lwd=2)
+legend("topleft", c("pistachio data","AR1","AR4"),
+       lty=c(1,2,2), lwd=c(1,2,2), 
+       col=c("black", "tomato3","darkgoldenrod4"),
+       bty="n")
+newPistachio <- forecast(model4_pistachio)
+newPistachio
+#make dataframe for plotting
+newPistachioF <- data.frame(newPistachio)
+
+# set up dates
+years <- c(rep(2021,4),rep(2022,12), rep(2023,8))
+month <- c(seq(9,12),seq(1,12), seq(1,8))
+newPistachioF$dateF <- ymd(paste(years,"/",month,"/",1))
+# make a plot with data and predictions including a prediction interval
+ggplot() +
+  geom_line(data = pistachio, aes(x = ymd(date), y = ET.in))+
+  xlim(ymd(pistachio$date[1]),newPistachioF$dateF[24])+  # Plotting original data
+  geom_line(data = newPistachioF, aes(x = dateF, y = Point.Forecast),
+            col="red") +  # Plotting model forecasts
+  geom_ribbon(data=newPistachioF, 
+              aes(x=dateF,ymin=Lo.95,
+                  ymax=Hi.95), fill=rgb(0.5,0.5,0.5,0.5))+ # uncertainty interval
+  theme_classic()+
+  labs(x="year", y="Evapotranspiration (in)")
+
+
+fallow_y <- na.omit(fallow_idle_ts)
+model1_fallow <- arima(fallow_y , # data 
+                          order = c(1,0,0)) # first number is AR order all other numbers get a 0 to keep AR format
+model4_fallow <- arima(fallow_y , # data 
+                          order = c(4,0,0)) # first number is AR order all other numbers get a 0 to keep AR format
+model4_fallow
+# calculate fit
+AR_fit1_fallow <- fallow_y - residuals(model1_fallow) 
+AR_fit4_fallow <- fallow_y - residuals(model4_fallow)
+#plot data
+plot(fallow_y)
+# plot fit
+points(AR_fit1_fallow, type = "l", col = "tomato3", lty = 2, lwd=2)
+points(AR_fit4_fallow, type = "l", col = "darkgoldenrod4", lty = 2, lwd=2)
+legend("topleft", c("fallow data","AR1","AR4"),
+       lty=c(1,2,2), lwd=c(1,2,2), 
+       col=c("black", "tomato3","darkgoldenrod4"),
+       bty="n")
+newFallow <- forecast(model4_fallow)
+newFallow
+#make dataframe for plotting
+newFallowF <- data.frame(newFallow)
+
+# set up dates
+years <- c(rep(2021,4),rep(2022,12), rep(2023,8))
+month <- c(seq(9,12),seq(1,12), seq(1,8))
+newFallowF$dateF <- ymd(paste(years,"/",month,"/",1))
+# make a plot with data and predictions including a prediction interval
+ggplot() +
+  geom_line(data = fallow_idle, aes(x = ymd(date), y = ET.in))+
+  xlim(ymd(fallow_idle$date[1]),newFallowF$dateF[24])+  # Plotting original data
+  geom_line(data = newFallowF, aes(x = dateF, y = Point.Forecast),
+            col="red") +  # Plotting model forecasts
+  geom_ribbon(data=newFallowF, 
+              aes(x=dateF,ymin=Lo.95,
+                  ymax=Hi.95), fill=rgb(0.5,0.5,0.5,0.5))+ # uncertainty interval
+  theme_classic()+
+  labs(x="year", y="Evapotranspiration (in)")
